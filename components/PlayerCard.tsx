@@ -13,7 +13,10 @@ interface PlayerCardProps {
   onCopyBuild: (player: PlayerBuild) => void;
 }
 
-function IconRow({ title, icons }: Readonly<{ title: string; icons: { id: string | number; name: string; image: string }[] }>) {
+function IconRow({
+  title,
+  icons,
+}: Readonly<{ title: string; icons: { id: string | number; name: string; image: string }[] }>) {
   return (
     <div>
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">{title}</p>
@@ -33,11 +36,14 @@ function IconRow({ title, icons }: Readonly<{ title: string; icons: { id: string
 }
 
 export function PlayerCard({ index, player, onReroll, onCopyBuild }: Readonly<PlayerCardProps>) {
-  const [expanded, setExpanded] = useState(true);
   const detailsId = useId();
 
   const runeIcons = [
-    { id: `primary-${player.runes.keystone.id}`, name: player.runes.keystone.name, image: `${DDRAGON_IMAGE_BASE}/${player.runes.keystone.icon}` },
+    {
+      id: `primary-${player.runes.keystone.id}`,
+      name: player.runes.keystone.name,
+      image: `${DDRAGON_IMAGE_BASE}/${player.runes.keystone.icon}`,
+    },
     ...player.runes.primaryMinors.map((rune) => ({
       id: `primary-${rune.id}`,
       name: rune.name,
@@ -59,25 +65,17 @@ export function PlayerCard({ index, player, onReroll, onCopyBuild }: Readonly<Pl
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <p className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 px-3 py-1 text-xs font-semibold text-zinc-200">
-            <img src={ROLE_ICON_MAP[player.role]} alt={player.role} className="h-4 w-4 rounded-sm object-cover" />
+            <img
+              src={ROLE_ICON_MAP[player.role]}
+              alt={player.role}
+              className="h-4 w-4 rounded-sm object-cover"
+            />
             {player.role}
           </p>
-          <button
-            type="button"
-            className="inline-flex items-center rounded-lg border border-zinc-700 px-2 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-zinc-100"
-            aria-expanded={expanded}
-            aria-controls={detailsId}
-            onClick={() => setExpanded((previous) => !previous)}
-          >
-            <span className="sr-only">{expanded ? "Collapse" : "Expand"} build details</span>
-            <span aria-hidden className="text-zinc-500">
-              {expanded ? "▼" : "▶"}
-            </span>
-          </button>
         </div>
       </div>
 
-      <div id={detailsId} hidden={!expanded}>
+      <div id={detailsId}>
         <div className="mb-4 flex items-center gap-3">
           <img
             src={player.champion.image}
@@ -96,25 +94,22 @@ export function PlayerCard({ index, player, onReroll, onCopyBuild }: Readonly<Pl
           <IconRow title="Runes" icons={runeIcons} />
           <IconRow
             title="Items"
-            icons={player.items.map((item) => ({ id: item.id, name: item.name, image: item.image }))}
+            icons={player.items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              image: item.image,
+            }))}
           />
           <IconRow
             title="Summoner Spells"
-            icons={player.summonerSpells.map((spell) => ({ id: spell.id, name: spell.name, image: spell.image }))}
+            icons={player.summonerSpells.map((spell) => ({
+              id: spell.id,
+              name: spell.name,
+              image: spell.image,
+            }))}
           />
         </div>
       </div>
-
-      {expanded ? null : (
-        <div className="mb-4 flex items-center gap-2">
-          <img
-            src={player.champion.image}
-            alt=""
-            className="h-10 w-10 rounded-lg border border-zinc-700 object-cover"
-          />
-          <p className="truncate text-sm font-medium text-zinc-200">{player.champion.name}</p>
-        </div>
-      )}
 
       <div className="mt-4 flex gap-2 border-t border-zinc-800/80 pt-4">
         <button

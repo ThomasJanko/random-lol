@@ -134,7 +134,14 @@ export function GeneratorForm({
   onPlayerSlotsChange,
   onGenerate,
 }: Readonly<GeneratorFormProps>) {
+  const [playersExpanded, setPlayersExpanded] = useState(true);
+  const playersContentId = useId();
   const slots = playerSlots.slice(0, playerCount);
+
+  const collapsedSummary =
+    slots.length === 0
+      ? "No players"
+      : slots.map((slot) => slot.displayName.trim() || "—").join(" · ");
 
   return (
     <section className="relative z-30 w-full rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-5 shadow-lg backdrop-blur">
@@ -163,53 +170,77 @@ export function GeneratorForm({
         </button>
       </div>
 
-      <div className="mt-6 space-y-3 border-t border-zinc-800 pt-5">
-        <p className="text-sm font-medium text-zinc-300">Players</p>
-        <p className="text-xs text-zinc-500">
-          Name each player and optionally pick a role. Leave role as &quot;Any&quot; for a random
-          role (still respects filter toggles).
-        </p>
-        <div className="space-y-2">
-          {slots.map((slot, index) => (
-            <div
-              key={index} // NOSONAR - fixed player slot index
-              className="flex flex-col gap-2 rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-3 sm:flex-row sm:items-end"
-            >
-              <div className="min-w-0 flex-1">
-                <label
-                  htmlFor={`player-name-${index}`}
-                  className="mb-1 block text-xs font-medium text-zinc-500"
-                >
-                  Name
-                </label>
-                <input
-                  id={`player-name-${index}`}
-                  type="text"
-                  value={slot.displayName}
-                  onChange={(event) =>
-                    onPlayerSlotsChange(
-                      updateSlot(playerSlots, index, { displayName: event.target.value }),
-                    )
-                  }
-                  placeholder={`Player${index + 1}`}
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-indigo-400"
-                />
+      <div className="mt-6 border-t border-zinc-800 pt-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-medium text-zinc-300">Players</h2>
+            {playersExpanded ? null : (
+              <p className="mt-1 truncate text-xs text-zinc-500" title={collapsedSummary}>
+                {collapsedSummary}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-700 px-2.5 py-1.5 text-xs font-medium text-zinc-300 transition hover:border-zinc-600 hover:text-zinc-100"
+            aria-expanded={playersExpanded}
+            aria-controls={playersContentId}
+            onClick={() => setPlayersExpanded((previous) => !previous)}
+          >
+            <span className="sr-only">{playersExpanded ? "Collapse" : "Expand"} player list</span>
+            <span aria-hidden className="text-zinc-500">
+              {playersExpanded ? "▼" : "▶"}
+            </span>
+          </button>
+        </div>
+
+        <div id={playersContentId} hidden={!playersExpanded} className="space-y-3">
+          <p className="text-xs text-zinc-500">
+            Name each player and optionally pick a role. Leave role as &quot;Any&quot; for a random
+            role (still respects filter toggles).
+          </p>
+          <div className="space-y-2">
+            {slots.map((slot, index) => (
+              <div
+                key={index} // NOSONAR - fixed player slot index
+                className="flex flex-col gap-2 rounded-xl border border-zinc-800/80 bg-zinc-950/50 p-3 sm:flex-row sm:items-end"
+              >
+                <div className="min-w-0 flex-1">
+                  <label
+                    htmlFor={`player-name-${index}`}
+                    className="mb-1 block text-xs font-medium text-zinc-500"
+                  >
+                    Name
+                  </label>
+                  <input
+                    id={`player-name-${index}`}
+                    type="text"
+                    value={slot.displayName}
+                    onChange={(event) =>
+                      onPlayerSlotsChange(
+                        updateSlot(playerSlots, index, { displayName: event.target.value }),
+                      )
+                    }
+                    placeholder={`Player${index + 1}`}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-indigo-400"
+                  />
+                </div>
+                <div className="sm:w-48">
+                  <label
+                    htmlFor={`player-role-trigger-${index}`}
+                    className="mb-1 block text-xs font-medium text-zinc-500"
+                  >
+                    Role
+                  </label>
+                  <RolePicker
+                    value={slot.role}
+                    onChange={(role) => onPlayerSlotsChange(updateSlot(playerSlots, index, { role }))}
+                    labelId={`player-role-trigger-${index}`}
+                  />
+                </div>
               </div>
-              <div className="sm:w-48">
-                <label
-                  htmlFor={`player-role-trigger-${index}`}
-                  className="mb-1 block text-xs font-medium text-zinc-500"
-                >
-                  Role
-                </label>
-                <RolePicker
-                  value={slot.role}
-                  onChange={(role) => onPlayerSlotsChange(updateSlot(playerSlots, index, { role }))}
-                  labelId={`player-role-trigger-${index}`}
-                />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>
