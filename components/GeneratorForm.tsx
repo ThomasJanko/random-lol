@@ -144,33 +144,34 @@ export function GeneratorForm({
       : slots.map((slot) => slot.displayName.trim() || "—").join(" · ");
 
   return (
-    <section className="relative z-30 w-full rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-5 shadow-lg backdrop-blur">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="w-full md:max-w-xs">
-          <label htmlFor="playerCount" className="mb-2 block text-sm font-medium text-zinc-300">
-            Number of players
-          </label>
-          <input
-            id="playerCount"
-            type="number"
-            min={1}
-            max={5}
-            value={playerCount}
-            onChange={(event) => onPlayerCountChange(Number(event.target.value))}
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-zinc-100 outline-none transition focus:border-indigo-400"
-          />
+    <>
+      <section className="relative z-30 w-full rounded-2xl border border-zinc-800/80 bg-zinc-900/70 p-5 shadow-lg backdrop-blur">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="w-full md:max-w-xs">
+            <label htmlFor="playerCount" className="mb-2 block text-sm font-medium text-zinc-300">
+              Number of players
+            </label>
+            <input
+              id="playerCount"
+              type="number"
+              min={1}
+              max={5}
+              value={playerCount}
+              onChange={(event) => onPlayerCountChange(Number(event.target.value))}
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2.5 text-zinc-100 outline-none transition focus:border-indigo-400"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={isLoading}
+            className="inline-flex h-11 items-center cursor-pointer justify-center rounded-xl bg-indigo-500 px-6 font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isLoading ? "Generating..." : "Generate"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={isLoading}
-          className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-500 px-6 font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoading ? "Generating..." : "Generate"}
-        </button>
-      </div>
 
-      <div className="mt-6 border-t border-zinc-800 pt-5">
+        <div className="mt-6 border-t border-zinc-800 pt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-medium text-zinc-300">Players</h2>
@@ -234,7 +235,9 @@ export function GeneratorForm({
                   </label>
                   <RolePicker
                     value={slot.role}
-                    onChange={(role) => onPlayerSlotsChange(updateSlot(playerSlots, index, { role }))}
+                    onChange={(role) =>
+                      onPlayerSlotsChange(updateSlot(playerSlots, index, { role }))
+                    }
                     labelId={`player-role-trigger-${index}`}
                   />
                 </div>
@@ -244,5 +247,15 @@ export function GeneratorForm({
         </div>
       </div>
     </section>
+
+      <button
+        type="button"
+        onClick={onGenerate}
+        disabled={isLoading}
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 z-40 -translate-x-1/2 cursor-pointer rounded-full bg-indigo-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-950/50 ring-1 ring-indigo-400/30 transition hover:bg-indigo-400 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60 sm:bottom-[max(2rem,env(safe-area-inset-bottom))]"
+      >
+        {isLoading ? "Generating..." : "Generate"}
+      </button>
+    </>
   );
 }
