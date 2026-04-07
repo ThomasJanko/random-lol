@@ -69,6 +69,8 @@ export interface LolDataSet {
   runeTrees: RuneTree[];
   items: Item[];
   itemsFinal: Item[];
+  /** Completed boot items only (tier 2+), subset of item tags including `Boots`. */
+  bootsFinal: Item[];
   summonerSpells: SummonerSpell[];
 }
 

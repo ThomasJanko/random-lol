@@ -33,14 +33,24 @@ function createDefaultSlots(count: number): PlayerSlotConfig[] {
   }));
 }
 
-function migratePlayerBuild(player: PlayerBuild): PlayerBuild {
-  if (player.displayName != null && typeof player.roleLocked === "boolean") {
-    return player;
+function migratePlayerBuild(player: unknown): PlayerBuild | null {
+  if (!player || typeof player !== "object") {
+    return null;
+  }
+  const p = player as PlayerBuild;
+  if (
+    typeof p.id !== "string"
+    || !Array.isArray(p.items)
+    || !Array.isArray(p.summonerSpells)
+    || !p.runes?.primaryMinors
+    || !Array.isArray(p.runes.primaryMinors)
+  ) {
+    return null;
   }
   return {
-    ...player,
-    displayName: player.displayName ?? "Player",
-    roleLocked: player.roleLocked ?? false,
+    ...p,
+    displayName: p.displayName ?? "Player",
+    roleLocked: typeof p.roleLocked === "boolean" ? p.roleLocked : false,
   };
 }
 
@@ -79,7 +89,11 @@ export function useGenerator() {
         const parsed = JSON.parse(saved) as StoredState;
         const count = Math.max(1, Math.min(5, parsed.playerCount));
         setPlayerCount(count);
-        setPlayers((parsed.players ?? []).map(migratePlayerBuild));
+        setPlayers(
+          (parsed.players ?? [])
+            .map(migratePlayerBuild)
+            .filter((entry): entry is PlayerBuild => entry != null),
+        );
         setFilters(normalizeFilters(parsed.filters));
         if (parsed.playerSlots?.length === count) {
           setPlayerSlots(parsed.playerSlots);

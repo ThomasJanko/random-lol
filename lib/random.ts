@@ -108,18 +108,27 @@ function buildRunePage(runeTrees: RuneTree[]): RunePage {
   };
 }
 
-function buildItems(items: Item[]): Item[] {
-  return pickUnique(items, 6);
+/** Exactly 6 items: 5 non-boot legendaries + 1 random boot, order shuffled. */
+function buildItemLoadout(nonBootItems: Item[], bootItems: Item[]): Item[] {
+  const boot = pickOne(bootItems);
+  const fiveNonBoot = pickUnique(nonBootItems, 5);
+  return pickUnique([...fiveNonBoot, boot], 6);
 }
 
 function isSmite(spell: SummonerSpell): boolean {
   return SMITE_SPELL_IDS.includes(spell.id as (typeof SMITE_SPELL_IDS)[number]);
 }
 
+function spellsWithoutSmite(spells: SummonerSpell[]): SummonerSpell[] {
+  return spells.filter((spell) => !isSmite(spell));
+}
+
 function getPreferredSmite(spells: SummonerSpell[]): SummonerSpell | null {
-  return spells.find((spell) => spell.id === "SummonerSmite")
-    ?? spells.find((spell) => isSmite(spell))
-    ?? null;
+  return (
+    spells.find((spell) => spell.id === "SummonerSmite") ??
+    spells.find((spell) => isSmite(spell)) ??
+    null
+  );
 }
 
 function buildSummonerSpells(
@@ -132,14 +141,18 @@ function buildSummonerSpells(
     if (!smite) {
       throw new Error("Smite is unavailable in the summoner spell dataset.");
     }
-    const partnerPool = activeSpells.filter((spell) => spell.id !== smite.id);
+    const partnerPool = spellsWithoutSmite(activeSpells);
     if (partnerPool.length < 1) {
       throw new Error("Activate at least 1 non-Smite summoner spell for Jungle.");
     }
     return [smite, pickOne(partnerPool)];
   }
 
-  return pickUnique(activeSpells, 2) as [SummonerSpell, SummonerSpell];
+  const nonSmitePool = spellsWithoutSmite(activeSpells);
+  if (nonSmitePool.length < 2) {
+    throw new Error("Activate at least 2 non-Smite summoner spells (Smite is Jungle-only).");
+  }
+  return pickUnique(nonSmitePool, 2) as [SummonerSpell, SummonerSpell];
 }
 
 export function generatePlayers(
@@ -154,7 +167,11 @@ export function generatePlayers(
     (champion) => !filters.disabledChampionIds.includes(champion.id),
   );
   const activeRoles = ROLES.filter((role) => !filters.disabledRoles.includes(role));
+  const bootsFinal = data.bootsFinal ?? [];
   const activeItems = data.itemsFinal.filter((item) => !filters.disabledItemIds.includes(item.id));
+  const bootIds = new Set(bootsFinal.map((item) => item.id));
+  const activeBoots = bootsFinal.filter((item) => !filters.disabledItemIds.includes(item.id));
+  const activeNonBootItems = activeItems.filter((item) => !bootIds.has(item.id));
   const activeSummoners = data.summonerSpells.filter(
     (spell) => !filters.disabledSummonerSpellIds.includes(spell.id),
   );
@@ -162,8 +179,11 @@ export function generatePlayers(
   if (activeChampions.length < clampedPlayerCount) {
     throw new Error(`Activate at least ${clampedPlayerCount} champions.`);
   }
-  if (activeItems.length < 6) {
-    throw new Error("Activate at least 6 items.");
+  if (activeBoots.length < 1) {
+    throw new Error("Activate at least 1 boot item.");
+  }
+  if (activeNonBootItems.length < 5) {
+    throw new Error("Activate at least 5 non-boot items.");
   }
   if (activeSummoners.length < 2) {
     throw new Error("Activate at least 2 summoner spells.");
@@ -194,7 +214,7 @@ export function generatePlayers(
       role,
       roleLocked,
       runes: buildRunePage(data.runeTrees),
-      items: buildItems(activeItems),
+      items: buildItemLoadout(activeNonBootItems, activeBoots),
       summonerSpells: buildSummonerSpells(role, activeSummoners, data.summonerSpells),
     };
   });
@@ -210,12 +230,22 @@ export function rerollSinglePlayer(
     (champion) => !filters.disabledChampionIds.includes(champion.id),
   );
   const activeRoles = ROLES.filter((role) => !filters.disabledRoles.includes(role));
+  const bootsFinal = data.bootsFinal ?? [];
   const activeItems = data.itemsFinal.filter((item) => !filters.disabledItemIds.includes(item.id));
+  const bootIds = new Set(bootsFinal.map((item) => item.id));
+  const activeBoots = bootsFinal.filter((item) => !filters.disabledItemIds.includes(item.id));
+  const activeNonBootItems = activeItems.filter((item) => !bootIds.has(item.id));
   const activeSummoners = data.summonerSpells.filter(
     (spell) => !filters.disabledSummonerSpellIds.includes(spell.id),
   );
 
-  if (activeChampionPool.length === 0 || activeRoles.length === 0 || activeItems.length < 6 || activeSummoners.length < 2) {
+  if (
+    activeChampionPool.length === 0 ||
+    activeRoles.length === 0 ||
+    activeBoots.length < 1 ||
+    activeNonBootItems.length < 5 ||
+    activeSummoners.length < 2
+  ) {
     throw new Error("Not enough active filters to reroll.");
   }
 
@@ -243,7 +273,7 @@ export function rerollSinglePlayer(
       champion,
       role: nextRole,
       runes: buildRunePage(data.runeTrees),
-      items: buildItems(activeItems),
+      items: buildItemLoadout(activeNonBootItems, activeBoots),
       summonerSpells: buildSummonerSpells(nextRole, activeSummoners, data.summonerSpells),
     };
   });

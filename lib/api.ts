@@ -25,6 +25,7 @@ interface DDragonChampionEntry {
 interface DDragonItemEntry {
   name: string;
   image: { full: string };
+  tags?: string[];
   maps?: Record<string, boolean>;
   gold?: { total: number };
   inStore?: boolean;
@@ -91,6 +92,15 @@ function mapItemsFinal(raw: DDragonDataMap<DDragonItemEntry>): Item[] {
     }));
 }
 
+function isBootsItem(item: DDragonItemEntry): boolean {
+  return Boolean(item.tags?.includes("Boots"));
+}
+
+/** Boots are completed items with the Boots tag — derive from itemsFinal so ids stay aligned. */
+function mapBootsFinal(itemsFinal: Item[], raw: DDragonDataMap<DDragonItemEntry>): Item[] {
+  return itemsFinal.filter((item) => isBootsItem(raw.data[item.id]));
+}
+
 function mapSummonerSpells(raw: DDragonDataMap<DDragonSpellEntry>): SummonerSpell[] {
   return Object.values(raw.data)
     .filter((spell) => !SUMMONER_BLOCKLIST.has(spell.id))
@@ -107,16 +117,26 @@ function buildDataset(): LolDataSet {
   const itemsRaw = DDRAGON_ITEMS_JSON as DDragonDataMap<DDragonItemEntry>;
   const spellsRaw = DDRAGON_SUMMONERS_JSON as DDragonDataMap<DDragonSpellEntry>;
 
+  const itemsFinal = mapItemsFinal(itemsRaw);
   return {
     champions: mapChampions(championsRaw),
     runeTrees: runesRaw,
     items: mapItems(itemsRaw),
-    itemsFinal: mapItemsFinal(itemsRaw),
+    itemsFinal,
+    bootsFinal: mapBootsFinal(itemsFinal, itemsRaw),
     summonerSpells: mapSummonerSpells(spellsRaw),
   };
 }
 
 export function getLolData(): LolDataSet {
+  // Empty [] is still an array — old caches could persist a buggy empty boots list.
+  if (
+    cachedData &&
+    (!Array.isArray(cachedData.bootsFinal) ||
+      (cachedData.bootsFinal.length === 0 && cachedData.itemsFinal.length > 0))
+  ) {
+    cachedData = null;
+  }
   if (cachedData) {
     return cachedData;
   }
